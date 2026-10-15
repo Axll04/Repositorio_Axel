@@ -50,4 +50,4 @@ stages:
         azureSubscription: 'ConexionAxel'
         appType: 'webApp'
         appName: 'PortafolioAxelito'
-        package: '$(System.ArtifactsDirectory)/drop/drop/**'
+        package: '$(System.ArtifactsDirectory)/drop/**'
