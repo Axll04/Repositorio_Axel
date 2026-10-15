@@ -1,43 +1,29 @@
 trigger:
-  - main # Se dispara automáticamente al hacer push a la rama main
+  - main
 
 pool:
   vmImage: 'windows-2022'
 
-variables:
-  proyecto: '**/*.csproj'
-  buildConfiguration: 'Release'
-  dotnetVersion: '10.0.x'
-
 stages:
-# 1. ETAPA DE COMPILACIÓN (CI)
 - stage: Build
-  displayName: 'Compilación y Publicación'
+  displayName: 'Preparar portafolio HTML'
   jobs:
   - job: BuildJob
     steps:
-    - task: UseDotNet@2
+    - task: CopyFiles@2
       inputs:
-        packageType: 'sdk'
-        version: '10.0.401'
-
-    - task: DotNetCoreCLI@2
-      inputs:
-        command: 'publish'
-        publishWebProjects: true
-        projects: '$(proyecto)'
-        arguments: '--configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory)'
-        zipAfterPublish: true
+        SourceFolder: '$(Build.SourcesDirectory)/portafolioPersonal'
+        Contents: '**'
+        TargetFolder: '$(Build.ArtifactStagingDirectory)/site'
 
     - task: PublishBuildArtifacts@1
       inputs:
-        PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+        PathtoPublish: '$(Build.ArtifactStagingDirectory)/site'
         ArtifactName: 'drop'
         publishLocation: 'Container'
 
-# 2. ETAPA DE DESPLIEGUE (CD)
 - stage: Deploy
-  displayName: 'Despliegue a Azure App Service'
+  displayName: 'Desplegar portafolio en Azure'
   dependsOn: Build
   condition: succeeded()
   jobs:
@@ -52,7 +38,7 @@ stages:
 
     - task: AzureWebApp@1
       inputs:
-        azureSubscription: 'ConexionAxel' # Nombre de la conexión
+        azureSubscription: 'ConexionAxel'
         appType: 'webApp'
-        appName: 'PortafolioAxelito'    # Nombre de tu App Service
-        package: '$(System.ArtifactsDirectory)/drop/*.zip'
+        appName: 'PortafolioAxelito'
+        package: '$(System.ArtifactsDirectory)/drop/**/*'
