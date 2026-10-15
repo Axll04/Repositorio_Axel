@@ -5,31 +5,39 @@ pool:
   vmImage: 'windows-2022'
 
 stages:
+
+# 1. ETAPA DE PREPARACIÓN
 - stage: Build
   displayName: 'Preparar portafolio HTML'
   jobs:
   - job: BuildJob
+    displayName: 'Copiar archivos del portafolio'
     steps:
     - task: CopyFiles@2
+      displayName: 'Copiar archivos HTML, CSS e imágenes'
       inputs:
         SourceFolder: '$(Build.SourcesDirectory)/portafolioPersonal'
         Contents: '**'
         TargetFolder: '$(Build.ArtifactStagingDirectory)/site'
 
     - task: PublishBuildArtifacts@1
+      displayName: 'Publicar artefacto'
       inputs:
         PathtoPublish: '$(Build.ArtifactStagingDirectory)/site'
         ArtifactName: 'drop'
         publishLocation: 'Container'
 
+# 2. ETAPA DE DESPLIEGUE
 - stage: Deploy
   displayName: 'Desplegar portafolio en Azure'
   dependsOn: Build
   condition: succeeded()
   jobs:
   - job: DeployJob
+    displayName: 'Publicar en Azure App Service'
     steps:
     - task: DownloadBuildArtifacts@0
+      displayName: 'Descargar artefactos'
       inputs:
         buildType: 'current'
         downloadType: 'single'
@@ -37,8 +45,9 @@ stages:
         downloadPath: '$(System.ArtifactsDirectory)'
 
     - task: AzureWebApp@1
+      displayName: 'Desplegar portafolio HTML'
       inputs:
         azureSubscription: 'ConexionAxel'
         appType: 'webApp'
         appName: 'PortafolioAxelito'
-        package: '$(System.ArtifactsDirectory)/drop/**/*'
+        package: '$(System.ArtifactsDirectory)/drop/drop/**'
