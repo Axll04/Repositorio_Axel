@@ -50,6 +50,6 @@ stages:
       displayName: 'Desplegar portafolio HTML'
       inputs:
         azureSubscription: 'ConexionAxel'
-        appType: 'webApp'
+        appType: 'webAppLinux'
         appName: 'PortafolioAxelito'
         package: '$(System.ArtifactsDirectory)/drop/portafolio.zip'
