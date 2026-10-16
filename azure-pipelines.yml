@@ -1,45 +1,49 @@
 trigger:
-  - main
+  - main # Se dispara automáticamente al hacer push a la rama main
 
 pool:
   vmImage: 'windows-2022'
 
-stages:
+variables:
+  proyecto: '**/*.csproj'
+  buildConfiguration: 'Release'
+  dotnetVersion: '10.0.x'
 
-# 1. ETAPA DE PREPARACIÓN
+stages:
+# 1. ETAPA DE COMPILACIÓN (CI)
 - stage: Build
-  displayName: 'Preparar portafolio HTML'
+  displayName: 'Compilación y Publicación'
   jobs:
   - job: BuildJob
-    displayName: 'Crear paquete del portafolio'
     steps:
-    - task: ArchiveFiles@2
-      displayName: 'Crear ZIP del portafolio'
+    - task: UseDotNet@2
       inputs:
-        rootFolderOrFile: '$(Build.SourcesDirectory)/portafolioPersonal'
-        includeRootFolder: false
-        archiveType: 'zip'
-        archiveFile: '$(Build.ArtifactStagingDirectory)/portafolio.zip'
-        replaceExistingArchive: true
+        packageType: 'sdk'
+        version: '10.0.401'
+
+    - task: DotNetCoreCLI@2
+      inputs:
+        command: 'publish'
+        publishWebProjects: true
+        projects: '$(proyecto)'
+        arguments: '--configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory)'
+        zipAfterPublish: true
 
     - task: PublishBuildArtifacts@1
-      displayName: 'Publicar artefacto ZIP'
       inputs:
-        PathtoPublish: '$(Build.ArtifactStagingDirectory)/portafolio.zip'
+        PathtoPublish: '$(Build.ArtifactStagingDirectory)'
         ArtifactName: 'drop'
         publishLocation: 'Container'
 
-# 2. ETAPA DE DESPLIEGUE
+# 2. ETAPA DE DESPLIEGUE (CD)
 - stage: Deploy
-  displayName: 'Desplegar portafolio en Azure'
+  displayName: 'Despliegue a Azure App Service'
   dependsOn: Build
   condition: succeeded()
   jobs:
   - job: DeployJob
-    displayName: 'Publicar en Azure App Service'
     steps:
     - task: DownloadBuildArtifacts@0
-      displayName: 'Descargar ZIP'
       inputs:
         buildType: 'current'
         downloadType: 'single'
@@ -47,9 +51,8 @@ stages:
         downloadPath: '$(System.ArtifactsDirectory)'
 
     - task: AzureWebApp@1
-      displayName: 'Desplegar portafolio HTML'
       inputs:
-        azureSubscription: 'ConexionAxel'
+        azureSubscription: 'ConexionAxel' # Nombre de la conexión
         appType: 'webAppLinux'
-        appName: 'PortafolioAxelito'
+        appName: 'PortafolioAxelito'    # Nombre de tu App Service
         package: '$(System.ArtifactsDirectory)/drop/portafolio.zip'
