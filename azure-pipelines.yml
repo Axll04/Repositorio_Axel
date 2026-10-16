@@ -1,14 +1,16 @@
-
 trigger:
-  - main
+  - main # Se dispara automáticamente al hacer push a la rama main
 
 pool:
   vmImage: 'windows-2022'
 
 variables:
+  proyecto: '**/*.csproj'
   buildConfiguration: 'Release'
+  dotnetVersion: '8.0.x'
 
 stages:
+# 1. ETAPA DE COMPILACIÓN (CI)
 - stage: Build
   displayName: 'Compilación y Publicación'
   jobs:
@@ -17,32 +19,23 @@ stages:
     - task: UseDotNet@2
       inputs:
         packageType: 'sdk'
-        version: '8.0.x'
+        version: '10.0.401'
 
     - task: DotNetCoreCLI@2
-      displayName: 'Publicar proyecto MVC'
       inputs:
         command: 'publish'
-        publishWebProjects: false
-        projects: 'PortafolioWeb/PortafolioWeb.csproj'
-        arguments: '--configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory)/publish'
-        zipAfterPublish: false
-
-    - task: ArchiveFiles@2
-      displayName: 'Crear ZIP'
-      inputs:
-        rootFolderOrFile: '$(Build.ArtifactStagingDirectory)/publish'
-        includeRootFolder: false
-        archiveType: 'zip'
-        archiveFile: '$(Build.ArtifactStagingDirectory)/portafolio.zip'
-        replaceExistingArchive: true
+        publishWebProjects: true
+        projects: '$(proyecto)'
+        arguments: '--configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory)'
+        zipAfterPublish: true
 
     - task: PublishBuildArtifacts@1
       inputs:
-        PathtoPublish: '$(Build.ArtifactStagingDirectory)/portafolio.zip'
+        PathtoPublish: '$(Build.ArtifactStagingDirectory)'
         ArtifactName: 'drop'
         publishLocation: 'Container'
 
+# 2. ETAPA DE DESPLIEGUE (CD)
 - stage: Deploy
   displayName: 'Despliegue a Azure App Service'
   dependsOn: Build
@@ -58,12 +51,8 @@ stages:
         downloadPath: '$(System.ArtifactsDirectory)'
 
     - task: AzureWebApp@1
-      displayName: 'Desplegar portafolio en Azure'
       inputs:
-        azureSubscription: 'ConexionAxel'
-        appType: 'webAppLinux'
-        appName: 'PortafolioAxelito'
+        azureSubscription: 'ConexionAxel' # Nombre de la conexión
+        appType: 'webApp'
+        appName: 'PortafolioAxelito'    # Nombre de tu App Service
         package: '$(System.ArtifactsDirectory)/drop/*.zip'
-        runtimeStack: 'DOTNETCORE|8.0'
-        startUpCommand: 'dotnet PortafolioWeb.dll'
-
