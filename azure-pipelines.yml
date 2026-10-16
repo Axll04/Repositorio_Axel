@@ -55,4 +55,4 @@ stages:
         azureSubscription: 'ConexionAxel' # Nombre de la conexión
         appType: 'webAppLinux'
         appName: 'PortafolioAxelito'    # Nombre de tu App Service
-        package: '$(System.ArtifactsDirectory)/drop/portafolio.zip'
+        package: '$(System.ArtifactsDirectory)/drop/*.zip'
