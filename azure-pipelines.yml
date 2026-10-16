@@ -64,6 +64,6 @@ stages:
         appType: 'webAppLinux'
         appName: 'PortafolioAxelito'
         package: '$(System.ArtifactsDirectory)/drop/*.zip'
-        runtimeStack: 'DOTNETCORE|10.0'
+        runtimeStack: 'DOTNETCORE|8.0'
         startUpCommand: 'dotnet PortafolioWeb.dll'
 
