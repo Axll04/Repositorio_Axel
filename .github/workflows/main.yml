@@ -1,0 +1,52 @@
+
+name: Compilar portafolio .NET
+
+on:
+  workflow_dispatch:
+
+  push:
+    branches:
+      - main
+
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Descargar el repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Listar archivos del repositorio
+        run: |
+          echo "Repositorio: ${{ github.repository }}"
+          echo "Rama: ${{ github.ref_name }}"
+          ls -la
+          find . -name "*.csproj"
+
+      - name: Buscar proyecto .NET
+        id: proyecto
+        run: |
+          PROJECT=$(find . -name "*.csproj" -not -path "./.git/*" | head -n 1)
+
+          if [ -z "$PROJECT" ]; then
+            echo "No se encontró ningún archivo .csproj"
+            exit 1
+          fi
+
+          echo "Proyecto encontrado: $PROJECT"
+          echo "ruta=$PROJECT" >> "$GITHUB_OUTPUT"
+
+      - name: Restaurar dependencias
+        run: dotnet restore "${{ steps.proyecto.outputs.ruta }}"
+
+      - name: Compilar proyecto
+        run: dotnet build "${{ steps.proyecto.outputs.ruta }}" --configuration Release --no-restore
